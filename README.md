@@ -46,7 +46,10 @@ in `AGENTS.md` ("Bumping the submodule").
 - **EE code.** It uses the unwind form of the generated code
   (`recomp-ee --unwind`). That form runs on one host thread: a thread switch
   unwinds to the dispatcher and does not block a host thread. The default
-  host-thread form cannot run in a browser.
+  host-thread form cannot run in a browser. The unwind form exists only
+  because the game is written as EE kernel threads; the decompilation's
+  final state removes them, and the browser then runs the same code as
+  every other front end ("Final state" in `ssx3/docs/plans/roadmap.md`).
 - **Worker.** The game runs in a Web Worker (`www/worker.js`), on a
   `requestAnimationFrame` loop paced to 59.94 game frames per second.
 - **Disc image.** The page hands over the disc image as a `File`. The worker

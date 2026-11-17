@@ -21,6 +21,11 @@ then `ssx3/docs/frontends.md` (the engine API).
   Check `pgrep -fl 'cargo|rustc|ssx3-headless|recomp-ee'` first and wait for
   it. Wrap long commands in `caffeinate -s`. Limit build jobs (`-j 4`, as
   `build.sh` does).
+- **Bumping the submodule.** `ssx3-decomp`'s porting waves only
+  compile-check the unwind form. Before moving `ssx3/` forward, run the
+  unwind replay against the RAM baseline in `ssx3/` (README, "Checking the
+  code form natively"): no halt, empty `misses`, identical RAM. It needs the
+  memory card the baseline was made with (`saves/ssx3-mc0.ps2`).
 - **Versions.** This repository has its own `Cargo.lock`: `wgpu` must
   resolve to the same version as `ssx3-gfx`'s (one `wgpu` in
   `cargo tree -d`), and the `wasm-bindgen` CLI must match the lock's
