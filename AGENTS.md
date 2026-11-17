@@ -43,6 +43,29 @@ browser with WebGPU, choose the ISO. Check: boot to the menus, a race
 (cross-origin isolation works), the page hidden and shown again (pauses and
 resumes).
 
+## Bumping the submodule
+
+`ssx3-decomp`'s porting loop only compile-checks the unwind form; the replay
+that proves it runs the game exactly is done here, before the submodule moves
+forward (one heavy process at a time; in `ssx3/`, after `tools/setup.py
+--unwind`):
+
+```sh
+cd ssx3
+CARGO_TARGET_DIR=target-unwind cargo build --profile game -p ssx3 --bin ssx3-headless --no-default-features --features ee-unwind
+SSX3_RAM_DUMP=target/unwind-ds1.bin SSX3_INPUT="$(python3 tools/integrate_wave.py race-input)" target-unwind/game/ssx3-headless 6000
+cmp target/unwind-ds1.bin /Users/fischer/Desktop/ssx3-decomp/target/gate/base/ds1.bin
+```
+
+No halt, empty `misses` in its report, identical RAM. The baseline is the
+race replay's RAM from the normal form; it holds on this Mac only (other
+platforms' maths libraries differ). Without `ssx3-decomp`'s copy, make it in
+`ssx3/` with the normal form: `cargo build --profile game -p ssx3 --bin
+ssx3-headless`, then the same replay with `target/game/ssx3-headless` into
+`target/gate/base/ds1.bin`. A difference: bisect it in `ssx3-decomp` with
+`SSX3_SKIP_OVERRIDES=addr,...` (its `AGENTS.md`) and fix it there; the
+submodule stays where it was until then.
+
 ## No game material
 
 Never commit the ISO, `orig/`, anything under `generated/` (in the

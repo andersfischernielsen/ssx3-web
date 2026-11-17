@@ -29,7 +29,8 @@ Rust stable with the `wasm32-unknown-unknown` target
 (`rustup target add wasm32-unknown-unknown`) is needed.
 
 To update the game: bump the submodule (`git -C ssx3 pull`, commit the new
-pointer), then run `python3 tools/setup.py --unwind` in `ssx3/` again.
+pointer), then run `python3 tools/setup.py --unwind` in `ssx3/` again. Before committing the bump, run the unwind replay
+in `AGENTS.md` ("Bumping the submodule").
 
 | Path | What it is |
 | --- | --- |
