@@ -9,7 +9,6 @@ exclude = ["ssx3"]
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/andersfischernielsen/ssx3-web"
 
 # Cargo takes profiles from the root workspace only: ssx3-decomp's.
 [profile.release]
