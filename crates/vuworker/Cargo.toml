@@ -11,3 +11,4 @@ crate-type = ["cdylib"]
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 ssx3-render = { path = "../../ssx3/crates/ssx3-render" }
 wasm-bindgen = "0.2.129"
+talc = "5.1.1"

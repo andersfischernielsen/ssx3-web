@@ -25,6 +25,11 @@ use ssx3_engine::ssx3_core::iso::{self, Source};
 use ssx3_engine::{vu, Engine, EngineConfig};
 use wasm_bindgen::prelude::*;
 
+// Talc instead of the default dlmalloc: allocation and freeing are a few
+// percent of a frame, and talc is the faster of the two in wasm.
+#[global_allocator]
+static TALC: talc::wasm::WasmDynamicTalc = talc::wasm::new_wasm_dynamic_allocator();
+
 /// The settings: what the page passes (`SSX3_*` keys, e.g. from the URL
 /// query), else the default, except the ones that would change the
 /// original image: no anisotropic filtering, the 4:3 box.
@@ -130,7 +135,7 @@ mod vu_pool {
 
     #[derive(Default)]
     struct Store {
-        at: std::collections::HashMap<u64, u32>,
+        at: std::collections::HashMap<u64, u32, foldhash::fast::FixedState>,
         bytes: Vec<u8>,
         generation: i32,
         /// Input did not fit: start over once the batch has run.

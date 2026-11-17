@@ -9,6 +9,11 @@ use std::cell::RefCell;
 
 use wasm_bindgen::prelude::*;
 
+// Talc instead of the default dlmalloc: allocation and freeing are a few
+// percent of a frame, and talc is the faster of the two in wasm.
+#[global_allocator]
+static TALC: talc::wasm::WasmDynamicTalc = talc::wasm::new_wasm_dynamic_allocator();
+
 thread_local! {
     static STORE: RefCell<Vec<u8>> = const { RefCell::new(Vec::new()) };
 }

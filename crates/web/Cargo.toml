@@ -18,3 +18,5 @@ wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
 web-sys = { version = "0.3", features = ["Blob", "File", "FileReaderSync", "OffscreenCanvas", "console"] }
 console_error_panic_hook = "0.1"
+foldhash = { version = "0.2", default-features = false }
+talc = "5.1.1"
