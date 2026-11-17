@@ -62,7 +62,7 @@ race replay's RAM from the normal form; it holds on this Mac only (other
 platforms' maths libraries differ). Without `ssx3-decomp`'s copy, make it in
 `ssx3/` with the normal form: `cargo build --profile game -p ssx3 --bin
 ssx3-headless`, then the same replay with `target/game/ssx3-headless` into
-`target/gate/base/ds1.bin`. A difference: bisect it in `ssx3-decomp` with
+`target/gate/base/ds1.bin`, and `cmp` with that. A difference: bisect it in `ssx3-decomp` with
 `SSX3_SKIP_OVERRIDES=addr,...` (its `AGENTS.md`) and fix it there; the
 submodule stays where it was until then.
 
