@@ -30,7 +30,7 @@
 </div>
 <div id="status"></div>
 <script type="module">
-// libpad button bits, as in the native window (crates/ssx3/src/main.rs).
+// libpad button bits, as in the native window (ssx3/crates/ssx3/src/main.rs).
 const KEYS = {
   ShiftRight: 1 << 0, Enter: 1 << 3,
   ArrowUp: 1 << 4, ArrowRight: 1 << 5, ArrowDown: 1 << 6, ArrowLeft: 1 << 7,
@@ -78,7 +78,7 @@ document.getElementById("iso").onchange = (e) => {
   worker.onerror = (e) => { msg.textContent = e.message; };
   const query = new URLSearchParams(location.search);
   const hp = query.get("helpers");
-  // Settings: SSX3_* keys of the URL query (docs/options.md), e.g.
+  // Settings: SSX3_* keys of the URL query (ssx3/docs/options.md), e.g.
   // ?SSX3_TICK_HZ=120&SSX3_SKIP_MOVIES=1.
   const settings = {};
   for (const [k, v] of query) if (k.startsWith("SSX3_")) settings[k] = v;

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Serve crates/ssx3-web/www on http://localhost:8000 (module workers need
+"""Serve www/ on http://localhost:8000 (module workers need
 http, not file://).
 
 On the LAN: `serve.py --lan --cert cert.pem --key key.pem` serves HTTPS on

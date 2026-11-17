@@ -309,7 +309,7 @@ fn now_ms() -> f64 {
 /// Boot the game: `canvas` is drawn to, `iso` is the disc image, `helpers`
 /// the number of VU helper workers the page will start (0: none; needs
 /// cross-origin isolation for the shared buffer), `settings` an object of
-/// `SSX3_*` settings (`docs/options.md`; strings) or `undefined`.
+/// `SSX3_*` settings (`ssx3/docs/options.md`; strings) or `undefined`.
 #[wasm_bindgen]
 pub async fn start(
     canvas: web_sys::OffscreenCanvas,

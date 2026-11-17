@@ -1,4 +1,4 @@
-//! The browser build's VU helper (`crates/ssx3-web/www/vuworker.js`): the
+//! The browser build's VU helper (`www/vuworker.js`): the
 //! renderer's chunks of VU1 calls run here, in parallel, as they run on
 //! threads natively. Jobs and results are bytes (`ssx3_render::vujob`);
 //! replayed calls' shared input comes from the store the game worker keeps

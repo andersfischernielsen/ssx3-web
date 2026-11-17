@@ -1,6 +1,44 @@
 # ssx3-web: SSX 3 in the browser
 
-The recompiled game as WebAssembly, drawn with WebGPU. Experimental.
+The recompiled game ([ssx3-decomp](https://github.com/andersfischernielsen/ssx3-decomp))
+as WebAssembly, drawn with WebGPU. Experimental.
+
+This is a front end of the game the way any other is: it uses `ssx3-engine`
+from a git submodule (`ssx3/`) and only its documented API
+(`ssx3/docs/frontends.md`). What it needs from the engine beyond that goes
+into `ssx3-engine` there.
+
+## Setup
+
+You need your own copy of the game: the generated code is made locally
+from your disc image and is never committed. Then:
+
+```sh
+git clone --recursive git@github.com:andersfischernielsen/ssx3-web.git
+cd ssx3-web/ssx3
+python3 tools/setup.py --unwind --iso /path/to/"SSX 3 (USA).iso"   # orig/, generated/ (ee, ee-unwind, iop, vu)
+cd ..
+cargo install wasm-bindgen-cli --version 0.2.129 --locked   # once; must match Cargo.lock
+sh build.sh && python3 serve.py   # http://localhost:8000, choose the ISO in the page
+```
+
+Open the page in a browser with WebGPU, for example Chrome or Edge 113+, or
+Safari 26+. Then choose the `SSX 3 (USA)` ISO.
+
+Rust stable with the `wasm32-unknown-unknown` target
+(`rustup target add wasm32-unknown-unknown`) is needed.
+
+To update the game: bump the submodule (`git -C ssx3 pull`, commit the new
+pointer), then run `python3 tools/setup.py --unwind` in `ssx3/` again.
+
+| Path | What it is |
+| --- | --- |
+| `crates/web` | the front end (`ssx3-web`, cdylib): boot, canvas blit, VU helper pool, audio pull, pause |
+| `crates/vuworker` | the VU helper (`ssx3-vuworker`, cdylib), run by `www/vuworker.js` in helper workers |
+| `www/` | the page and the workers; `pkg/` and `pkg-vu/` are build output |
+| `build.sh` | the wasm32 build (32 MiB stack, simd128) and `wasm-bindgen` |
+| `serve.py` | a local server with the cross-origin isolation headers (`--lan` for HTTPS) |
+| `ssx3/` | `ssx3-decomp`, pinned |
 
 ## How it works
 
@@ -12,7 +50,7 @@ The recompiled game as WebAssembly, drawn with WebGPU. Experimental.
   `requestAnimationFrame` loop paced to 59.94 game frames per second.
 - **Disc image.** The page hands over the disc image as a `File`. The worker
   reads byte ranges from it synchronously with `FileReaderSync`, which only
-  exists in workers, through the `ssx3_core::iso::set_opener` hook. The
+  exists in workers, through the engine's `ssx3_core::iso::set_opener` hook. The
   executable comes from the disc as well. Nothing is uploaded.
 - **Rendering.** `ssx3-gfx` draws into an `OffscreenCanvas` with WebGPU, at
   the canvas's pixel size. With `cfg(target_arch = "wasm32")`, the renderer
@@ -31,7 +69,8 @@ The recompiled game as WebAssembly, drawn with WebGPU. Experimental.
 
 - **VU helpers.** The renderer's VU1 calls, the native VU programs of
   `ssx3-render`, run in chunks on helper workers (`www/vuworker.js`,
-  `crates/ssx3-vuworker`, a 180 KB module), as they run on threads natively.
+  `crates/vuworker`, a 180 KB module), as they run on threads natively
+  (`ssx3_engine::vu`; "VU offload" in `ssx3/docs/frontends.md`).
   - Jobs and results are bytes (`ssx3_render::vujob`), passed through a
     SharedArrayBuffer job queue.
   - The game worker takes jobs too, then waits with `Atomics.wait`.
@@ -48,10 +87,12 @@ The recompiled game as WebAssembly, drawn with WebGPU. Experimental.
   frame loop stops, the engine's sound is silenced, the `AudioContext` is
   suspended); it resumes where it was when the page is shown again.
 - **Settings.** `SSX3_*` keys in the page's URL query are the game's
-  settings (`docs/options.md`), e.g. `?SSX3_TICK_HZ=120`.
+  settings (`ssx3/docs/options.md`), e.g. `?SSX3_TICK_HZ=120`;
+  `?SSX3_EVENT=ARA1` boots straight into a race.
 - **Image.** The game's 4:3 view boxed in the canvas, rendered at the box's
   pixel size (the render scale costs little: the time goes to the CPU
-  side), no anisotropic filtering.
+  side), no anisotropic filtering. `?SSX3_ASPECT=16:9` boxes at 16:9,
+  `?SSX3_ASPECT=fill` fills the canvas (the view widened to it).
 
 Not yet supported: the memory card, gamepads, the settings overlay,
 interpolation and texture packs.
@@ -89,22 +130,24 @@ Next steps, roughly by payoff:
 - a wasm-SIMD version of the PS2 float helpers (the NEON path needs
   per-lane shifts and count-leading-zeros, which wasm SIMD lacks).
 
-## Building
+## Checking the code form natively
 
-```sh
-# once: the unwind form of the EE code, and wasm-bindgen matching Cargo.lock
-./target/release/recomp-ee --unwind --out generated/ee-unwind --package-prefix ssx3-ee-unwind
-cargo install wasm-bindgen-cli --version 0.2.129 --locked
-
-crates/ssx3-web/build.sh      # → crates/ssx3-web/www/pkg
-crates/ssx3-web/serve.py      # http://localhost:8000
-```
-
-Open the page in a browser with WebGPU, for example Chrome or Edge 113+, or
-Safari 26+. Then choose the `SSX 3 (USA)` ISO.
-
-To check the unwind form natively, without a browser:
+The browser runs the unwind form of the EE code. To run that form natively,
+without a browser (for example a race replay against `ssx3-decomp`'s RAM
+baseline), in `ssx3/`:
 
 ```sh
 CARGO_TARGET_DIR=target-unwind cargo build --profile game -p ssx3 --bin ssx3-headless --no-default-features --features ee-unwind
+SSX3_RAM_DUMP=unwind.bin SSX3_INPUT="$(python3 tools/integrate_wave.py race-input)" target-unwind/game/ssx3-headless 6000
+cmp unwind.bin target/gate/base/ds1.bin
 ```
+
+No halt, empty `misses` and identical RAM mean the form the browser runs
+matches the game. `SSX3_VU_OFFLOAD_SELFTEST=1` on the same runner checks the
+VU offload path (encode, run, decode).
+
+## No game material
+
+Never commit the ISO, `orig/`, anything under `generated/`, the ELF
+(`SLUS_207.72`), RAM or VRAM dumps (`*.bin`) or the wasm builds
+(`www/pkg*`: they contain the compiled game code).

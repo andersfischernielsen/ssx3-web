@@ -1,1 +1,5 @@
 PLAN.md
+/target/
+/www/pkg/
+/www/pkg-vu/
+*.iso

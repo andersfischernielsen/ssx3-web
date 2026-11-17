@@ -1,0 +1,27 @@
+name: No game material present
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  no-game-material:
+    name: Assert no game material is present
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check that no disc, executable, translated code or wasm build is tracked
+        run: |
+          bad=$(git ls-files | grep -Ei '\.iso$|(^|/)orig/|(^|/)generated/|SLUS_207\.72|\.bin$|\.wasm$|^www/pkg' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::These files come from the game and must not be committed:"
+            echo "$bad"
+            exit 1
+          fi

@@ -1,6 +1,6 @@
-// A VU helper: runs chunks of the renderer's VU1 calls (ssx3-vuworker) from
+// A VU helper: runs chunks of the renderer's VU1 calls (crates/vuworker) from
 // the shared job queue the game worker fills each frame (the layout is
-// described in crates/ssx3-web/src/lib.rs, `vu_pool`).
+// described in crates/web/src/lib.rs, `vu_pool`).
 import init, { run_job, store_reset, store_append } from "./pkg-vu/ssx3_vuworker.js";
 
 onmessage = async ({ data: { sab, id } }) => {
