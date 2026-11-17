@@ -1,0 +1,14 @@
+{
+  "name": "ssx3-web",
+  "private": true,
+  "description": "Lint and format checks for the page and workers (www/).",
+  "scripts": {
+    "lint": "oxlint www",
+    "fmt": "oxfmt www",
+    "fmt:check": "oxfmt --check www"
+  },
+  "devDependencies": {
+    "oxfmt": "0.79.0",
+    "oxlint": "1.94.0"
+  }
+}

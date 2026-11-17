@@ -19,7 +19,9 @@ onmessage = async (e) => {
       // VU helpers: the renderer's VU1 work in parallel (needs a shared
       // buffer, i.e. cross-origin isolation).
       // (`?helpers=N` on the page overrides the count.)
-      const auto = self.crossOriginIsolated ? Math.max(1, Math.min(6, (navigator.hardwareConcurrency || 4) - 2)) : 0;
+      const auto = self.crossOriginIsolated
+        ? Math.max(1, Math.min(6, (navigator.hardwareConcurrency || 4) - 2))
+        : 0;
       const helpers = self.crossOriginIsolated && m.helpers != null ? m.helpers : auto;
       game = await start(m.canvas, m.iso, helpers, m.settings);
       const sab = game.vu_buffer();
@@ -30,7 +32,7 @@ onmessage = async (e) => {
       if (paused) game.pause();
       else loop();
     } catch (err) {
-      postMessage({ type: "error", message: String(err && err.stack || err) });
+      postMessage({ type: "error", message: String((err && err.stack) || err) });
     }
   } else if (m.type === "buttons") {
     buttons = m.buttons;

@@ -7,15 +7,19 @@ onmessage = async ({ data: { sab, id } }) => {
   await init();
   const i32 = new Int32Array(sab);
   const u8 = new Uint8Array(sab);
-  const outBase = i32[4], arena = i32[5];
+  const outBase = i32[4],
+    arena = i32[5];
   let seen = 0;
   // The store mirror: its generation and the bytes copied so far.
-  let storeGen = 0, storeEnd = 0;
+  let storeGen = 0,
+    storeEnd = 0;
   for (;;) {
     Atomics.wait(i32, 0, seen);
     const gen = Atomics.load(i32, 0);
     seen = gen;
-    const sg = Atomics.load(i32, 6), se = Atomics.load(i32, 7), sb = i32[8];
+    const sg = Atomics.load(i32, 6),
+      se = Atomics.load(i32, 7),
+      sb = i32[8];
     if (sg !== storeGen) {
       store_reset();
       storeGen = sg;

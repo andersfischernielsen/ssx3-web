@@ -3,3 +3,4 @@ PLAN.md
 /www/pkg/
 /www/pkg-vu/
 *.iso
+/node_modules/
