@@ -31,6 +31,12 @@ then `ssx3/docs/frontends.md` (the engine API).
 
 ## Checking a change
 
+CI (`.github/workflows/ci.yml`) runs, without the game: `npm ci`, then
+`npx oxlint --deny-warnings www` and `npx oxfmt --check www` (format with
+`npm run fmt`); `rustfmt --check` on the crates; and clippy of the VU helper
+for wasm32 against stub generated code (`ssx3/tools/setup.py --stubs-only`).
+The front end itself needs the game: build it locally.
+
 `sh build.sh`, then `python3 serve.py` and open `http://localhost:8000` in a
 browser with WebGPU, choose the ISO. Check: boot to the menus, a race
 (`?SSX3_EVENT=ARA1`), sound, the console's `N VU helper workers` line

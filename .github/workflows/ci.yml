@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    name: Lint and format www/ (oxlint, oxfmt)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npx oxlint --deny-warnings www
+      - run: npx oxfmt --check www
+
+  rust:
+    name: Rust format and VU helper check (wasm32)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt, clippy
+      - name: Format
+        run: rustfmt --check --edition 2021 crates/*/src/lib.rs
+      # No disc here: stub crates for the generated code, enough for the
+      # crates that do not use the game. The front end (crates/web) needs
+      # the generated game; checking it waits for an unwind skeleton of it
+      # in ssx3-decomp (as `tools/ee_skeleton.py` makes for generated/ee).
+      - name: Stub generated code
+        run: python3 ssx3/tools/setup.py --stubs-only
+      - uses: Swatinem/rust-cache@v2
+      - name: Clippy (VU helper)
+        run: cargo clippy --locked --profile web --target wasm32-unknown-unknown -p ssx3-vuworker -- -D warnings

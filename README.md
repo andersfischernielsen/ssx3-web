@@ -146,6 +146,14 @@ No halt, empty `misses` and identical RAM mean the form the browser runs
 matches the game. `SSX3_VU_OFFLOAD_SELFTEST=1` on the same runner checks the
 VU offload path (encode, run, decode).
 
+## Checks
+
+CI lints and formats the page and workers with
+[oxlint and oxfmt](https://oxc.rs/) (`npm ci`, `npm run lint`,
+`npm run fmt:check`; `npm run fmt` formats), checks the Rust formatting, and
+check-builds the VU helper for wasm32 against stub generated code. The front
+end needs the generated game, so it is built locally (`sh build.sh`).
+
 ## No game material
 
 Never commit the ISO, `orig/`, anything under `generated/`, the ELF
