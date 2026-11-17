@@ -92,7 +92,12 @@ in `AGENTS.md` ("Bumping the submodule").
   suspended); it resumes where it was when the page is shown again.
 - **Settings.** `SSX3_*` keys in the page's URL query are the game's
   settings (`ssx3/docs/options.md`), e.g. `?SSX3_TICK_HZ=120`;
-  `?SSX3_EVENT=ARA1` boots straight into a race.
+  `?SSX3_EVENT=ARA1` boots straight into a race. Page options: `?fps=1`
+  shows an fps counter over the canvas (off by default: in Firefox, updating
+  the page over the canvas makes it now and then show an older canvas frame,
+  a visible jump back), `?SSX3_PRESENT_MARKER=1` draws the present count and
+  the game frame as bit cells in the image's bottom-left corner (to check
+  frame order in a screen recording).
 - **Image.** The game's 4:3 view boxed in the canvas, rendered at the box's
   pixel size (the render scale costs little: the time goes to the CPU
   side), no anisotropic filtering. `?SSX3_ASPECT=16:9` boxes at 16:9,

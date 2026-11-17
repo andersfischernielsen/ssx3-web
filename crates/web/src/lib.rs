@@ -271,6 +271,10 @@ fn fit(w: u32, h: u32, a: f32) -> (f32, f32) {
 const BLIT: &str = r#"
 @group(0) @binding(0) var tex: texture_2d<f32>;
 @group(0) @binding(1) var smp: sampler;
+// The present marker (`SSX3_PRESENT_MARKER=1`): x the present count, y the
+// game frame, z on. Bit cells in the image's bottom-left corner, lowest bit
+// first: the bottom row the present count, the row above the game frame.
+@group(0) @binding(2) var<uniform> mark: vec4<u32>;
 struct VsOut { @builtin(position) pos: vec4<f32>, @location(0) uv: vec2<f32> };
 @vertex fn vs(@builtin(vertex_index) i: u32) -> VsOut {
     let p = vec2<f32>(f32((i << 1u) & 2u), f32(i & 2u));
@@ -279,7 +283,15 @@ struct VsOut { @builtin(position) pos: vec4<f32>, @location(0) uv: vec2<f32> };
     o.uv = vec2<f32>(p.x, 1.0 - p.y);
     return o;
 }
-@fragment fn fs(v: VsOut) -> @location(0) vec4<f32> { return vec4<f32>(textureSample(tex, smp, v.uv).rgb, 1.0); }
+@fragment fn fs(v: VsOut) -> @location(0) vec4<f32> {
+    let c = textureSample(tex, smp, v.uv).rgb;
+    if (mark.z != 0u && v.uv.x < 0.25 && v.uv.y > 0.94) {
+        let bit = u32(v.uv.x * 64.0);
+        let n = select(mark.y, mark.x, v.uv.y > 0.97);
+        return vec4<f32>(vec3<f32>(f32((n >> bit) & 1u)), 1.0);
+    }
+    return vec4<f32>(c, 1.0);
+}
 "#;
 
 #[wasm_bindgen]
@@ -293,6 +305,11 @@ pub struct Game {
     view_format: wgpu::TextureFormat,
     pipeline: wgpu::RenderPipeline,
     sampler: wgpu::Sampler,
+    /// The present marker's uniform (`SSX3_PRESENT_MARKER`) and the
+    /// presents so far.
+    mark: wgpu::Buffer,
+    mark_on: bool,
+    presents: u32,
     started: f64,
     /// ms in `run_frame` (game and, in it, the renderer) and in `present`
     /// since the last report.
@@ -318,6 +335,7 @@ pub async fn start(
     settings: JsValue,
 ) -> Result<Game, JsValue> {
     let page = page_settings(&settings);
+    let mark_on = page.get("SSX3_PRESENT_MARKER").is_some_and(|v| v != "0");
     console_error_panic_hook::set_once();
     let blob = Arc::new(SendBlob(iso));
     iso::set_opener(Box::new(move || {
@@ -420,6 +438,14 @@ pub async fn start(
         started: now_ms(),
         ms_frame: 0.0,
         ms_present: 0.0,
+        mark: ctx.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("present marker"),
+            size: 16,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        }),
+        mark_on,
+        presents: 0,
         vu_buffer,
     })
 }
@@ -524,8 +550,21 @@ impl Game {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&self.sampler),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: self.mark.as_entire_binding(),
+                },
             ],
         });
+        self.presents = self.presents.wrapping_add(1);
+        let mark = [
+            self.presents,
+            self.engine.frames() as u32,
+            self.mark_on as u32,
+            0,
+        ];
+        let bytes: Vec<u8> = mark.iter().flat_map(|v| v.to_le_bytes()).collect();
+        self.queue.write_buffer(&self.mark, 0, &bytes);
         let mut enc = self.device.create_command_encoder(&Default::default());
         {
             let mut pass = enc.begin_render_pass(&wgpu::RenderPassDescriptor {
