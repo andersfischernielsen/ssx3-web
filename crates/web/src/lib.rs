@@ -101,6 +101,10 @@ unsafe impl Sync for SendBlob {}
 /// follow the header, then the store ([`vu::SharedStore`]:
 /// replayed calls' input, written once; helpers mirror it), then each
 /// helper's output arena.
+///
+/// The store starts over (a new generation) when it is full, but only
+/// between batches: the jobs of a batch hold offsets into it until they
+/// have run. Within a batch, input that does not fit is carried by its job.
 mod vu_pool {
     use js_sys::{Atomics, Int32Array, SharedArrayBuffer, Uint8Array};
     use ssx3_engine::vu;
@@ -109,13 +113,17 @@ mod vu_pool {
     const TABLE: u32 = 16;
     const MAX_JOBS: usize = ((HEADER / 4 - TABLE) / 4) as usize;
     const INPUTS: u32 = 32 << 20;
-    const STORE: u32 = 24 << 20;
+    /// The store's size unless `SSX3_VU_STORE_MB` says otherwise (a small
+    /// one starts over every few frames: a check of that path).
+    pub const STORE: u32 = 24 << 20;
     const ARENA: u32 = 8 << 20;
 
     pub struct Pool {
         pub sab: SharedArrayBuffer,
         i32: Int32Array,
         u8: Uint8Array,
+        /// The store's size (bytes).
+        store_size: u32,
         /// The store's contents here too (jobs run on this thread).
         store: std::sync::Mutex<Store>,
     }
@@ -125,6 +133,8 @@ mod vu_pool {
         at: std::collections::HashMap<u64, u32>,
         bytes: Vec<u8>,
         generation: i32,
+        /// Input did not fit: start over once the batch has run.
+        full: bool,
     }
 
     // SAFETY: a wasm32 build without atomics has one thread; the helpers
@@ -133,37 +143,36 @@ mod vu_pool {
     unsafe impl Sync for Pool {}
 
     impl Pool {
-        pub fn new(helpers: u32) -> Option<Pool> {
-            let sab = SharedArrayBuffer::new(HEADER + INPUTS + STORE + helpers * ARENA);
+        pub fn new(helpers: u32, store_size: u32) -> Option<Pool> {
+            let sab = SharedArrayBuffer::new(HEADER + INPUTS + store_size + helpers * ARENA);
             let (i32, u8) = (Int32Array::new(&sab), Uint8Array::new(&sab));
-            i32.set_index(4, (HEADER + INPUTS + STORE) as i32);
+            i32.set_index(4, (HEADER + INPUTS + store_size) as i32);
             i32.set_index(5, ARENA as i32);
             i32.set_index(8, (HEADER + INPUTS) as i32);
             Some(Pool {
                 sab,
                 i32,
                 u8,
+                store_size,
                 store: Default::default(),
             })
         }
 
         /// [`super::vu::SharedStore`]: data under `key`, appended
-        /// once (the store starts over, a new generation, when full).
+        /// once; none when it does not fit (the store starts over after
+        /// the batch, [`Pool::restart_if_full`]).
         fn store_offset(&self, key: u64, bytes: &mut dyn FnMut() -> Vec<u8>) -> Option<u32> {
             let mut s = self.store.lock().unwrap();
             if let Some(&o) = s.at.get(&key) {
                 return Some(o);
             }
             let b = bytes();
-            if b.len() > STORE as usize / 4 {
+            if b.len() > self.store_size as usize / 4 {
                 return None;
             }
-            if s.bytes.len() + b.len() > STORE as usize {
-                s.at.clear();
-                s.bytes.clear();
-                s.generation += 1;
-                self.i32.set_index(7, 0);
-                self.i32.set_index(6, s.generation);
+            if s.bytes.len() + b.len() > self.store_size as usize {
+                s.full = true;
+                return None;
             }
             let o = s.bytes.len() as u32;
             self.u8
@@ -173,6 +182,20 @@ mod vu_pool {
             s.at.insert(key, o);
             self.i32.set_index(7, s.bytes.len() as i32);
             Some(o)
+        }
+
+        /// After a batch has run: start the store over if input did not
+        /// fit (the helpers mirror the new generation at the next batch).
+        fn restart_if_full(&self) {
+            let mut s = self.store.lock().unwrap();
+            if s.full {
+                s.at.clear();
+                s.bytes.clear();
+                s.full = false;
+                s.generation += 1;
+                self.i32.set_index(7, 0);
+                self.i32.set_index(6, s.generation);
+            }
         }
 
         fn claim(&self, tag: i32, n: i32) -> Option<usize> {
@@ -195,6 +218,7 @@ mod vu_pool {
             let size: usize = jobs.iter().map(|j| j.len()).sum();
             if jobs.len() > MAX_JOBS || size > INPUTS as usize {
                 let r: Vec<Vec<u8>> = jobs.iter().map(|j| local(j)).collect();
+                self.restart_if_full();
                 return Box::new(move || r);
             }
             let n = jobs.len() as i32;
@@ -232,7 +256,8 @@ mod vu_pool {
                 }
                 let _ = Atomics::wait(&self.i32, 3, d);
             }
-            out.into_iter()
+            let results = out
+                .into_iter()
                 .enumerate()
                 .map(|(j, r)| {
                     r.unwrap_or_else(|| {
@@ -246,7 +271,9 @@ mod vu_pool {
                         v
                     })
                 })
-                .collect()
+                .collect();
+            self.restart_if_full();
+            results
         }
     }
 
@@ -336,6 +363,10 @@ pub async fn start(
 ) -> Result<Game, JsValue> {
     let page = page_settings(&settings);
     let mark_on = page.get("SSX3_PRESENT_MARKER").is_some_and(|v| v != "0");
+    let store_size = page
+        .get("SSX3_VU_STORE_MB")
+        .and_then(|v| v.parse::<u32>().ok())
+        .map_or(vu_pool::STORE, |mb| mb.clamp(1, 256) << 20);
     console_error_panic_hook::set_once();
     let blob = Arc::new(SendBlob(iso));
     iso::set_opener(Box::new(move || {
@@ -416,7 +447,9 @@ pub async fn start(
         ..EngineConfig::new(Box::new(self::settings(page)))
     });
     let gfx = engine.renderer().cloned().ok_or("renderer: no GPU")?;
-    let pool = (helpers > 0).then(|| vu_pool::Pool::new(helpers)).flatten();
+    let pool = (helpers > 0)
+        .then(|| vu_pool::Pool::new(helpers, store_size))
+        .flatten();
     let vu_buffer = pool.as_ref().map(|p| p.sab.clone());
     if let Some(p) = pool {
         log(&format!("[ssx3] {helpers} VU helper workers"));

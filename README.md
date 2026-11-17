@@ -97,7 +97,11 @@ in `AGENTS.md` ("Bumping the submodule").
   the page over the canvas makes it now and then show an older canvas frame,
   a visible jump back), `?SSX3_PRESENT_MARKER=1` draws the present count and
   the game frame as bit cells in the image's bottom-left corner (to check
-  frame order in a screen recording).
+  frame order in a screen recording), `?SSX3_VU_STORE_MB=1` shrinks the VU
+  helpers' store of shared input from 24 MB (it then starts over every few
+  frames: a check of that path). A crash logs its stack to the console
+  (`[ssx3] the game crashed` or `[ssx3] VU helper N failed`), and the wasm
+  memory size is logged every 10 s.
 - **Image.** The game's 4:3 view boxed in the canvas, rendered at the box's
   pixel size (the render scale costs little: the time goes to the CPU
   side), no anisotropic filtering. `?SSX3_ASPECT=16:9` boxes at 16:9,

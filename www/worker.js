@@ -10,12 +10,15 @@ let size = null;
 let paused = false;
 let stopped = false;
 let raf = 0;
+// The module's exports (its memory, for the reports).
+let wasm = null;
+const mb = () => Math.round(wasm.memory.buffer.byteLength / 2 ** 20);
 
 onmessage = async (e) => {
   const m = e.data;
   if (m.type === "start") {
     try {
-      await init();
+      wasm = await init();
       // VU helpers: the renderer's VU1 work in parallel (needs a shared
       // buffer, i.e. cross-origin isolation).
       // (`?helpers=N` on the page overrides the count.)
@@ -58,6 +61,7 @@ function loop() {
   let next = performance.now();
   let frames = 0;
   let mark = next;
+  let seconds = 0;
   const tick = (now) => {
     if (paused) return;
     if (size) {
@@ -67,24 +71,35 @@ function loop() {
     // Game frames due by now (at most 2 to catch up; further behind, the
     // game slows down instead of stuttering).
     let ran = 0;
-    while (now >= next && ran < 2) {
-      if (!game.frame(buttons)) {
-        stopped = true;
-        postMessage({ type: "error", message: "the game stopped" });
-        return;
+    try {
+      while (now >= next && ran < 2) {
+        if (!game.frame(buttons)) {
+          stopped = true;
+          postMessage({ type: "error", message: "the game stopped" });
+          return;
+        }
+        next += FIELD_MS;
+        ran++;
+        frames++;
       }
-      next += FIELD_MS;
-      ran++;
-      frames++;
-    }
-    if (now - next > 100) next = now;
-    if (ran > 0) {
-      game.present();
-      const a = game.audio();
-      if (a.length) postMessage({ type: "audio", samples: a }, [a.buffer]);
+      if (now - next > 100) next = now;
+      if (ran > 0) {
+        game.present();
+        const a = game.audio();
+        if (a.length) postMessage({ type: "audio", samples: a }, [a.buffer]);
+      }
+    } catch (err) {
+      // A trap (a panic has printed its message just before) or an
+      // allocation failure (no message): the stack says where.
+      stopped = true;
+      const message = `the game crashed (memory ${mb()} MB):\n${err.stack || err}`;
+      console.error(`[ssx3] ${message}`);
+      postMessage({ type: "error", message });
+      return;
     }
     if (now - mark >= 1000) {
       postMessage({ type: "fps", fps: (frames * 1000) / (now - mark) });
+      if (++seconds % 10 === 0) console.log(`[ssx3] wasm memory ${mb()} MB`);
       frames = 0;
       mark = now;
     }
