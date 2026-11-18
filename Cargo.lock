@@ -1126,6 +1126,9 @@ dependencies = [
 [[package]]
 name = "ssx3-core"
 version = "0.1.0"
+dependencies = [
+ "foldhash",
+]
 
 [[package]]
 name = "ssx3-ee-rt"
