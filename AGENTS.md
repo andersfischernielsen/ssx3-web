@@ -12,20 +12,19 @@ then `ssx3/docs/frontends.md` (the engine API).
   needs more, change `ssx3-engine` in `ssx3-decomp` (a pull request there,
   documented in `frontends.md`), then bump the submodule. Never edit files
   under `ssx3/` in this repository.
-- **The game data.** `ssx3/` needs `python3 tools/setup.py --unwind` (run in
+- **The game data.** `ssx3/` needs `python3 tools/setup.py` (run in
   `ssx3/`) before anything builds: it makes `orig/` and `generated/` (ee,
-  ee-unwind, iop, vu) from the disc image. Run it again after bumping the
+  iop, vu) from the disc image. Run it again after bumping the
   submodule.
 - **One heavy process at a time, machine-wide** (a build, a test run, a game
   run): another session may be building `ssx3-decomp` on the same machine.
   Check `pgrep -fl 'cargo|rustc|ssx3-headless|recomp-ee'` first and wait for
   it. Wrap long commands in `caffeinate -s`. Limit build jobs (`-j 4`, as
   `build.sh` does).
-- **Bumping the submodule.** `ssx3-decomp`'s porting waves only
-  compile-check the unwind form. Before moving `ssx3/` forward, run the
-  unwind replay against the RAM baseline in `ssx3/` (README, "Checking the
-  code form natively"): no halt, empty `misses`, identical RAM. It needs the
-  memory card the baseline was made with (`saves/ssx3-mc0.ps2`).
+- **Bumping the submodule.** Pin a commit on `ssx3-decomp`'s `main`; run
+  `python3 tools/setup.py` in `ssx3/` again, build, and smoke-test the
+  browser (below): a race for a minute or more, all guest threads switching,
+  no crash. The game's own gate (race replay RAM) runs in `ssx3-decomp`.
 - **Versions.** This repository has its own `Cargo.lock`: `wgpu` must
   resolve to the same version as `ssx3-gfx`'s (one `wgpu` in
   `cargo tree -d`), and the `wasm-bindgen` CLI must match the lock's
@@ -50,26 +49,11 @@ resumes).
 
 ## Bumping the submodule
 
-`ssx3-decomp`'s porting loop only compile-checks the unwind form; the replay
-that proves it runs the game exactly is done here, before the submodule moves
-forward (one heavy process at a time; in `ssx3/`, after `tools/setup.py
---unwind`):
-
-```sh
-cd ssx3
-CARGO_TARGET_DIR=target-unwind cargo build --profile game -p ssx3 --bin ssx3-headless --no-default-features --features ee-unwind
-SSX3_RAM_DUMP=target/unwind-ds1.bin SSX3_INPUT="$(python3 tools/integrate_wave.py race-input)" target-unwind/game/ssx3-headless 6000
-cmp target/unwind-ds1.bin ../../ssx3-decomp/target/gate/base/ds1.bin
-```
-
-No halt, empty `misses` in its report, identical RAM. The baseline is the
-race replay's RAM from the normal form; it holds on this Mac only (other
-platforms' maths libraries differ). Without `ssx3-decomp`'s copy, make it in
-`ssx3/` with the normal form: `cargo build --profile game -p ssx3 --bin
-ssx3-headless`, then the same replay with `target/game/ssx3-headless` into
-`target/gate/base/ds1.bin`, and `cmp` with that. A difference: bisect it in `ssx3-decomp` with
-`SSX3_SKIP_OVERRIDES=addr,...` (its `AGENTS.md`) and fix it there; the
-submodule stays where it was until then.
+Move `ssx3/` to a commit on `ssx3-decomp`'s `main`, run `python3 tools/setup.py`
+in `ssx3/`, `sh build.sh`, and smoke-test as above. The replay that proves the
+game runs exactly is `ssx3-decomp`'s gate (its `AGENTS.md`); the browser runs
+the same code. A crash after a bump is most likely a deeper call chain than a
+JSPI stack holds, or a new blocking call: look at the console's stack first.
 
 ## No game material
 

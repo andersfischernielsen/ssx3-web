@@ -2,14 +2,15 @@
 //! image is a `File` the page hands over, read synchronously with
 //! `FileReaderSync` (only workers have it); frames are drawn by `ssx3-gfx`
 //! with WebGPU into an `OffscreenCanvas` transferred from the page. The EE
-//! code is the unwind form (`generated/ee-unwind`): one host thread, so a
-//! game frame (`Game::frame`) returns to the browser like any other call.
+//! code is the default form (`generated/ee`: a stack per guest thread); the
+//! stacks are WebAssembly JSPI stacks (`jspi.rs`), so a game frame
+//! (`Game::frame`) is a promising call the worker awaits.
 //!
 //! The image: rendered at the canvas's pixel size, the game's 4:3 view
 //! boxed in the canvas (`SSX3_ASPECT=fill` fills it), no anisotropic
 //! filtering, no interpolation, no texture packs.
 //!
-//! The game itself is `ssx3-engine` (unwind form): this crate is the
+//! The game itself is `ssx3-engine`: this crate is the
 //! browser front end (disc from a `File`, the canvas, the VU helpers).
 //!
 //! Sound: the mixer's samples go to the page ([`Game::audio`]), which plays
@@ -24,6 +25,8 @@ use std::sync::Arc;
 use ssx3_engine::ssx3_core::iso::{self, Source};
 use ssx3_engine::{vu, Engine, EngineConfig};
 use wasm_bindgen::prelude::*;
+
+mod jspi;
 
 // Talc instead of the default dlmalloc: allocation and freeing are a few
 // percent of a frame, and talc is the faster of the two in wasm.
@@ -373,6 +376,7 @@ pub async fn start(
         .and_then(|v| v.parse::<u32>().ok())
         .map_or(vu_pool::STORE, |mb| mb.clamp(1, 256) << 20);
     console_error_panic_hook::set_once();
+    jspi::install();
     let blob = Arc::new(SendBlob(iso));
     iso::set_opener(Box::new(move || {
         let reader = web_sys::FileReaderSync::new()

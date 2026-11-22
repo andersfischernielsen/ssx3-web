@@ -1072,6 +1072,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_spanned"
+version = "1.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c187e0a369471c550af028cba56d4f4fa2a489ad28151ae95a4d340a2a8b782"
+dependencies = [
+ "serde_core",
+]
+
+[[package]]
 name = "simd-adler32"
 version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1131,139 +1140,139 @@ dependencies = [
 ]
 
 [[package]]
+name = "ssx3-ee"
+version = "0.1.0"
+dependencies = [
+ "ssx3-ee-rt",
+ "ssx3-ee-s00",
+ "ssx3-ee-s01",
+ "ssx3-ee-s02",
+ "ssx3-ee-s03",
+ "ssx3-ee-s04",
+ "ssx3-ee-s05",
+ "ssx3-ee-s06",
+ "ssx3-ee-s07",
+ "ssx3-ee-s08",
+ "ssx3-ee-s09",
+ "ssx3-ee-s10",
+ "ssx3-ee-s11",
+ "ssx3-ee-s12",
+ "ssx3-ee-s13",
+ "ssx3-ee-s14",
+ "ssx3-ee-s15",
+]
+
+[[package]]
 name = "ssx3-ee-rt"
 version = "0.1.0"
 
 [[package]]
-name = "ssx3-ee-unwind"
-version = "0.1.0"
-dependencies = [
- "ssx3-ee-rt",
- "ssx3-ee-unwind-s00",
- "ssx3-ee-unwind-s01",
- "ssx3-ee-unwind-s02",
- "ssx3-ee-unwind-s03",
- "ssx3-ee-unwind-s04",
- "ssx3-ee-unwind-s05",
- "ssx3-ee-unwind-s06",
- "ssx3-ee-unwind-s07",
- "ssx3-ee-unwind-s08",
- "ssx3-ee-unwind-s09",
- "ssx3-ee-unwind-s10",
- "ssx3-ee-unwind-s11",
- "ssx3-ee-unwind-s12",
- "ssx3-ee-unwind-s13",
- "ssx3-ee-unwind-s14",
- "ssx3-ee-unwind-s15",
-]
-
-[[package]]
-name = "ssx3-ee-unwind-s00"
+name = "ssx3-ee-s00"
 version = "0.1.0"
 dependencies = [
  "ssx3-ee-rt",
 ]
 
 [[package]]
-name = "ssx3-ee-unwind-s01"
+name = "ssx3-ee-s01"
 version = "0.1.0"
 dependencies = [
  "ssx3-ee-rt",
 ]
 
 [[package]]
-name = "ssx3-ee-unwind-s02"
+name = "ssx3-ee-s02"
 version = "0.1.0"
 dependencies = [
  "ssx3-ee-rt",
 ]
 
 [[package]]
-name = "ssx3-ee-unwind-s03"
+name = "ssx3-ee-s03"
 version = "0.1.0"
 dependencies = [
  "ssx3-ee-rt",
 ]
 
 [[package]]
-name = "ssx3-ee-unwind-s04"
+name = "ssx3-ee-s04"
 version = "0.1.0"
 dependencies = [
  "ssx3-ee-rt",
 ]
 
 [[package]]
-name = "ssx3-ee-unwind-s05"
+name = "ssx3-ee-s05"
 version = "0.1.0"
 dependencies = [
  "ssx3-ee-rt",
 ]
 
 [[package]]
-name = "ssx3-ee-unwind-s06"
+name = "ssx3-ee-s06"
 version = "0.1.0"
 dependencies = [
  "ssx3-ee-rt",
 ]
 
 [[package]]
-name = "ssx3-ee-unwind-s07"
+name = "ssx3-ee-s07"
 version = "0.1.0"
 dependencies = [
  "ssx3-ee-rt",
 ]
 
 [[package]]
-name = "ssx3-ee-unwind-s08"
+name = "ssx3-ee-s08"
 version = "0.1.0"
 dependencies = [
  "ssx3-ee-rt",
 ]
 
 [[package]]
-name = "ssx3-ee-unwind-s09"
+name = "ssx3-ee-s09"
 version = "0.1.0"
 dependencies = [
  "ssx3-ee-rt",
 ]
 
 [[package]]
-name = "ssx3-ee-unwind-s10"
+name = "ssx3-ee-s10"
 version = "0.1.0"
 dependencies = [
  "ssx3-ee-rt",
 ]
 
 [[package]]
-name = "ssx3-ee-unwind-s11"
+name = "ssx3-ee-s11"
 version = "0.1.0"
 dependencies = [
  "ssx3-ee-rt",
 ]
 
 [[package]]
-name = "ssx3-ee-unwind-s12"
+name = "ssx3-ee-s12"
 version = "0.1.0"
 dependencies = [
  "ssx3-ee-rt",
 ]
 
 [[package]]
-name = "ssx3-ee-unwind-s13"
+name = "ssx3-ee-s13"
 version = "0.1.0"
 dependencies = [
  "ssx3-ee-rt",
 ]
 
 [[package]]
-name = "ssx3-ee-unwind-s14"
+name = "ssx3-ee-s14"
 version = "0.1.0"
 dependencies = [
  "ssx3-ee-rt",
 ]
 
 [[package]]
-name = "ssx3-ee-unwind-s15"
+name = "ssx3-ee-s15"
 version = "0.1.0"
 dependencies = [
  "ssx3-ee-rt",
@@ -1274,12 +1283,13 @@ name = "ssx3-engine"
 version = "0.1.0"
 dependencies = [
  "ssx3-core",
+ "ssx3-ee",
  "ssx3-ee-rt",
- "ssx3-ee-unwind",
  "ssx3-game",
  "ssx3-gfx",
  "ssx3-iop",
  "ssx3-iop-gen",
+ "ssx3-plugin",
  "ssx3-ps2",
  "ssx3-render",
 ]
@@ -1289,9 +1299,10 @@ name = "ssx3-game"
 version = "0.1.0"
 dependencies = [
  "ssx3-core",
+ "ssx3-ee",
  "ssx3-ee-rt",
- "ssx3-ee-unwind",
  "ssx3-mpeg",
+ "ssx3-plugin",
  "ssx3-render",
  "ssx3-vu",
 ]
@@ -1330,6 +1341,16 @@ version = "0.1.0"
 [[package]]
 name = "ssx3-mpeg"
 version = "0.1.0"
+
+[[package]]
+name = "ssx3-plugin"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "ssx3-core",
+ "ssx3-ee-rt",
+ "toml",
+]
 
 [[package]]
 name = "ssx3-ps2"
@@ -1492,10 +1513,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "toml_datetime"
-version = "1.1.2+spec-1.1.0"
+name = "toml"
+version = "1.2.2+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b86d767906c6c42421dcba507eb9d203e779497710a47782a224bb871653053"
+checksum = "5426cb1b964690d913f6c5c1a1ae0b42f428ec506bb4d452876d7a209c9bca3b"
+dependencies = [
+ "indexmap",
+ "serde_core",
+ "serde_spanned",
+ "toml_datetime",
+ "toml_parser",
+ "toml_writer",
+ "winnow",
+]
+
+[[package]]
+name = "toml_datetime"
+version = "1.1.3+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "173f25c883cd2176a2d8212155638c0a60d484a9d84546d270866f40f56b6e49"
 dependencies = [
  "serde_core",
 ]
@@ -1514,12 +1550,18 @@ dependencies = [
 
 [[package]]
 name = "toml_parser"
-version = "1.1.5+spec-1.1.0"
+version = "1.1.6+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "baa693a8032d7e1cada7d0041e96126df243179ff061456783ac7f12bda4744c"
+checksum = "e6769c452d71ba30696c6b37770c439a9cc9110f47f7d5cdbeda79840ef5ea31"
 dependencies = [
  "winnow",
 ]
+
+[[package]]
+name = "toml_writer"
+version = "1.2.0+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "009dbb7700f11c55ef83aebbe4c0e9cf1f1ac0844bd8d6f00dc38f302026e13a"
 
 [[package]]
 name = "unicode-ident"

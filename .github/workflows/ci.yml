@@ -40,8 +40,8 @@ jobs:
         run: rustfmt --check --edition 2021 crates/*/src/lib.rs
       # No disc here: stub crates for the generated code, enough for the
       # crates that do not use the game. The front end (crates/web) needs
-      # the generated game; checking it waits for an unwind skeleton of it
-      # in ssx3-decomp (as `tools/ee_skeleton.py` makes for generated/ee).
+      # the generated game; checking it waits for a skeleton of it
+      # (as `tools/ee_skeleton.py` makes for generated/ee).
       - name: Stub generated code
         run: python3 ssx3/tools/setup.py --stubs-only
       - uses: Swatinem/rust-cache@v2
