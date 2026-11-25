@@ -44,17 +44,11 @@ pointer), then run `python3 tools/setup.py` in `ssx3/` again. Before committing 
 ## How it works
 
 - **EE code and guest threads.** The browser runs the same generated code as
-  every other front end. The game is written as EE kernel threads, each on a
-  stack of its own; here the stacks are WebAssembly JSPI (JavaScript Promise
-  Integration) stacks. A guest thread is a `WebAssembly.promising` call of
-  `jspi_thread_entry`; a switch is a `WebAssembly.Suspending` import
-  (`jspi_switch`) that parks the calling stack on a promise the next switch
-  resolves (`crates/web/js/jspi.js`, `crates/web/src/jspi.rs`, the engine's
-  `ssx3_ps2::threads::StackSwitcher`). The game frame itself is a promising
-  call the worker awaits (`www/worker.js`). Rust's shadow stack pointer
-  (`__stack_pointer`, exported by `build.sh`) is swapped at every switch: each
-  guest thread has its own block of memory. Needs JSPI: Chrome and Edge 137+,
-  Firefox 153+, Safari 27+.
+  every other front end. Guest threads are native threads nested on the frame
+  driver's host stack (the engine's kernel, `Kernel.host_threads`), so a game
+  frame is a plain call from the worker's `requestAnimationFrame` loop
+  (`www/worker.js`): no JSPI, no stack switching. Deep guest call chains need
+  the big wasm stack `build.sh` sets (32 MiB).
 - **Worker.** The game runs in a Web Worker (`www/worker.js`), on a
   `requestAnimationFrame` loop paced to 59.94 game frames per second.
 - **Disc image.** The page hands over the disc image as a `File`. The worker

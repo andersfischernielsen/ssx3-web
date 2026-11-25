@@ -1,6 +1,6 @@
 [package]
 name = "ssx3-web"
-description = "SSX 3 in the browser: the game compiled to WebAssembly (guest threads on JSPI stacks), drawn with WebGPU from a Web Worker (README.md)."
+description = "SSX 3 in the browser: the game compiled to WebAssembly, drawn with WebGPU from a Web Worker (README.md)."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
