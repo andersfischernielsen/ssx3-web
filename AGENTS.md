@@ -52,8 +52,8 @@ resumes).
 Move `ssx3/` to a commit on `ssx3-decomp`'s `main`, run `python3 tools/setup.py`
 in `ssx3/`, `sh build.sh`, and smoke-test as above. The replay that proves the
 game runs exactly is `ssx3-decomp`'s gate (its `AGENTS.md`); the browser runs
-the same code. A crash after a bump is most likely a deeper call chain than a
-JSPI stack holds, or a new blocking call: look at the console's stack first.
+the same code. A crash after a bump is most likely a deeper call chain than the
+wasm stack holds (`-zstack-size` in `build.sh`): look at the console's stack first.
 
 ## No game material
 
